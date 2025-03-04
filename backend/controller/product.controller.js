@@ -38,15 +38,28 @@ export const createProduct = async (req, res) => {
 };
 
 export const updateProduct = async (req, res) => {
-    const {id} = req.params;
-    const product = req.body;   
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ success: false, message: "Invalid Product Id" });
-    }
-
     try {
-        const updatedProduct = await Product.findByIdAndUpdate(id, product, {new: true});
+        const {id} = req.params;
+        const userId = req.user.id;
+        const {name, price, description, image} = req.body;   
+    
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ success: false, message: "Invalid Product Id" });
+        }
+        // const updatedProduct = await Product.findByIdAndUpdate(id, product, {new: true});
+        const product = await Product.findById(id);
+
+        if (product.user.toString() !== userId) {
+            return res.status(401).json({ success: false, message: "Not authorized" });
+        }
+
+        product.name = name || product.name;
+        product.price = price || product.price;
+        product.description = description || product.description;
+        product.image = image || product.image;
+
+        const updatedProduct = await product.save();
+
         res.status(200).json({ success: true, data: updatedProduct });
     } catch (error) {
         console.error("Error in update product ",error.message);
