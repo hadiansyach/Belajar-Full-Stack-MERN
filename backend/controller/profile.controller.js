@@ -3,8 +3,8 @@ import bcrypt from "bcryptjs";
 
 export const getUserProfile = async (req, res) => {
     try {
-        const {id} = req.params;
-        const user = await User.findById(id).select("-password");
+        const {userId} = req.params;
+        const user = await User.findById(userId).select("-password");
 
         if(!user) return res.status(404).json({ success: false, message: "User not found" });
 
@@ -17,11 +17,18 @@ export const getUserProfile = async (req, res) => {
 
 export const editProfile = async (req, res) =>  {
     try {
-        const {id} = req.params;
-        let {password} = req.body;
-        const user = await User.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        const userId = req.user.id;
+        let {name, email, phoneNumber, password} = req.body;
 
-        if(!user) return res.status(404).json({ success: false, message: "User not found" });
+        const userExist = await User.findOne({ email });
+        if (userExist && userExist._id.toString() !== userId) {
+            return res.status(400).json({ success: false, message: "Email already in use" });
+        }
+
+        const user = await user.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
 
         if (password) {
             // hash password
@@ -30,6 +37,9 @@ export const editProfile = async (req, res) =>  {
         }
 
         // Update user fields
+        user.name = name || user.name;
+        user.email = email || user.email;
+        user.phoneNumber = phoneNumber || user.phoneNumber;
         user.password = password || user.password;
 
         const updatedUser = await user.save();

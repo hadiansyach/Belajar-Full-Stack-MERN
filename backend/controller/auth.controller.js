@@ -32,7 +32,6 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
-    console.log("JWT SECRET, ", process.env.JWT_SECRET);
 
     try {
         // check if user exists
@@ -42,12 +41,12 @@ export const loginUser = async (req, res) => {
 
         // compare password
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials!" });
+        if (!isMatch) return res.status(400).json({ success: false, message: "Password is incorrect!" });
 
         // generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {expiresIn: "4h"});
 
-        res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+        res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber, role: user.role } });
     } catch (error) {
         console.error("Error in login ",error.message);
         res.status(500).json({ success: false, message: "Server Error ", error: error.message });
